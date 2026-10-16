@@ -28,6 +28,7 @@ export const ManajemenUserView: React.FC = () => {
   const [formUsername, setFormUsername] = useState('');
   const [formPassword, setFormPassword] = useState('');
   const [formNama, setFormNama] = useState('');
+  const [formNip, setFormNip] = useState('');
   const [formPeran, setFormPeran] = useState<UserRole>('GURU_BK');
   const [formStatusAktif, setFormStatusAktif] = useState<'AKTIF' | 'NONAKTIF'>('AKTIF');
 
@@ -51,6 +52,7 @@ export const ManajemenUserView: React.FC = () => {
     setFormUsername('');
     setFormPassword('');
     setFormNama('');
+    setFormNip('');
     setFormPeran('GURU_BK');
     setFormStatusAktif('AKTIF');
     setFeedback(null);
@@ -62,6 +64,7 @@ export const ManajemenUserView: React.FC = () => {
     setFormUsername(u.username);
     setFormPassword(''); // Dikosongkan kecuali ingin reset
     setFormNama(u.nama);
+    setFormNip(u.nip || '');
     setFormPeran(u.peran);
     setFormStatusAktif(u.status_aktif);
     setFeedback(null);
@@ -87,6 +90,7 @@ export const ManajemenUserView: React.FC = () => {
         username: formUsername.trim(),
         password: formPassword,
         nama: formNama.trim(),
+        nip: formNip.trim() || '-',
         peran: formPeran,
         actor_id: currentUser.user_id,
       });
@@ -95,6 +99,7 @@ export const ManajemenUserView: React.FC = () => {
         sub_action: 'update',
         user_id: activeUser.user_id,
         nama: formNama.trim(),
+        nip: formNip.trim() || '-',
         peran: formPeran,
         status_aktif: formStatusAktif,
         new_password: formPassword ? formPassword : undefined,
@@ -161,7 +166,7 @@ export const ManajemenUserView: React.FC = () => {
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[11px]">
                 <tr>
                   <th className="py-3 px-4">ID Pengguna</th>
-                  <th className="py-3 px-4">Nama Lengkap</th>
+                  <th className="py-3 px-4">Nama Lengkap & NIP</th>
                   <th className="py-3 px-4">Username</th>
                   <th className="py-3 px-4">Peran (Role)</th>
                   <th className="py-3 px-4 text-center">Status</th>
@@ -178,8 +183,11 @@ export const ManajemenUserView: React.FC = () => {
                       <td className="py-3 px-4 font-mono font-semibold text-slate-700">
                         {u.user_id}
                       </td>
-                      <td className="py-3 px-4 font-bold text-slate-900">
-                        {u.nama}
+                      <td className="py-3 px-4">
+                        <div className="font-bold text-slate-900">{u.nama}</div>
+                        <div className="text-[11px] font-mono text-slate-500 mt-0.5">
+                          {u.nip && u.nip !== '-' ? `NIP. ${u.nip}` : <span className="italic text-slate-400">Non-PNS / Belum diisi</span>}
+                        </div>
                       </td>
                       <td className="py-3 px-4 font-mono text-slate-700">
                         {u.username}
@@ -251,6 +259,23 @@ export const ManajemenUserView: React.FC = () => {
                   placeholder="Contoh: Dra. Hj. Nurlela, M.Pd"
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-900"
                 />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nomor Induk Pegawai (NIP)
+                  <span className="text-slate-400 font-normal ml-1">(Terkait Tanda Tangan Laporan)</span>
+                </label>
+                <input
+                  type="text"
+                  value={formNip}
+                  onChange={(e) => setFormNip(e.target.value)}
+                  placeholder="Contoh: 19800512 200501 1 003 atau - (jika non-PNS)"
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono"
+                />
+                <p className="text-[11px] text-slate-500 mt-1">
+                  NIP ini akan otomatis tercantum pada bagian tanda tangan dokumen laporan disiplin wali kelas.
+                </p>
               </div>
 
               <div>

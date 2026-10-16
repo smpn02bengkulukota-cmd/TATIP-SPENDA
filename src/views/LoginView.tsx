@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 interface LoginViewProps {
-  onOpenSetupGuide: () => void;
+  onOpenSetupGuide?: () => void;
 }
 
 export const LoginView: React.FC<LoginViewProps> = ({ onOpenSetupGuide }) => {
@@ -24,8 +24,19 @@ export const LoginView: React.FC<LoginViewProps> = ({ onOpenSetupGuide }) => {
     connectionError, 
     checkConnection,
     structureInfo,
-    pengaturan
+    pengaturan,
+    isDatabaseSetupDone
   } = useApp();
+
+  // Database setup dinyatakan selesai jika sudah ditandai, struktur tab valid, atau admin/pengguna sudah ada
+  const isSetupCompleted = isDatabaseSetupDone || Boolean(
+    connectionState === 'CONNECTED' && (
+      structureInfo?.is_fully_valid ||
+      structureInfo?.has_admin ||
+      (structureInfo?.connected && (!structureInfo.missing_sheets || structureInfo.missing_sheets.length === 0)) ||
+      ((structureInfo?.total_users ?? 0) > 0)
+    )
+  );
 
   // Mode: login biasa atau setup admin pertama resmi
   const [isSetupMode, setIsSetupMode] = useState<boolean>(false);
@@ -321,15 +332,19 @@ export const LoginView: React.FC<LoginViewProps> = ({ onOpenSetupGuide }) => {
             </form>
           )}
 
-          <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-            <span>SMP Negeri 2 Kota Bengkulu</span>
-            <button
-              onClick={onOpenSetupGuide}
-              className="text-blue-900 font-medium hover:underline flex items-center gap-1"
-            >
-              <HelpCircle className="w-3.5 h-3.5" />
-              Bantuan Setup
-            </button>
+          {/* Footer Card: "Bantuan Setup" ditiadakan setelah setup database dilakukan */}
+          <div className={`mt-6 pt-4 border-t border-slate-100 flex items-center ${!isSetupCompleted && onOpenSetupGuide ? 'justify-between' : 'justify-center'} text-xs text-slate-500`}>
+            <span>{schoolName}</span>
+            {!isSetupCompleted && onOpenSetupGuide && (
+              <button
+                type="button"
+                onClick={onOpenSetupGuide}
+                className="text-blue-900 font-medium hover:underline flex items-center gap-1 transition-colors"
+              >
+                <HelpCircle className="w-3.5 h-3.5" />
+                Bantuan Setup
+              </button>
+            )}
           </div>
         </div>
       </div>

@@ -10,6 +10,7 @@ export interface User {
   user_id: string;
   username: string;
   nama: string;
+  nip?: string;
   peran: UserRole;
   status_aktif: 'AKTIF' | 'NONAKTIF';
   tanggal_dibuat?: string;

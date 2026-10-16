@@ -288,6 +288,7 @@ export const api = {
     password?: string;
     new_password?: string;
     nama?: string;
+    nip?: string;
     peran?: UserRole;
     status_aktif?: 'AKTIF' | 'NONAKTIF';
     actor_id: string;

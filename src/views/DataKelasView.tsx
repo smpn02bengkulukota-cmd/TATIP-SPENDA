@@ -278,7 +278,9 @@ export const DataKelasView: React.FC = () => {
                 >
                   <option value="">-- Pilih Akun Guru / Wali Kelas --</option>
                   {waliKelasUsers.map(u => (
-                    <option key={u.user_id} value={u.user_id}>{u.nama} ({u.username})</option>
+                    <option key={u.user_id} value={u.user_id}>
+                      {u.nama} {u.nip && u.nip !== '-' ? `(NIP. ${u.nip})` : ''} - {u.username}
+                    </option>
                   ))}
                 </select>
               </div>

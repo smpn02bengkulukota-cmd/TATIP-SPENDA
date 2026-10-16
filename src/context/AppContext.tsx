@@ -30,6 +30,7 @@ interface AppContextType {
   checkConnection: () => Promise<void>;
   structureInfo: StructureCheckResult | null;
   initEmptyStructure: (adminData?: { username: string; password: string; nama: string }) => Promise<{ success: boolean; message?: string; error?: string }>;
+  isDatabaseSetupDone: boolean;
 
   // Data Nyata dari Spreadsheet
   isLoadingData: boolean;
@@ -59,6 +60,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [endpointUrl, setEndpointState] = useState<string>(getEndpointUrl());
   const [structureInfo, setStructureInfo] = useState<StructureCheckResult | null>(null);
+  const [isDatabaseSetupDone, setIsDatabaseSetupDone] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('SIP_TATIB_DB_SETUP_DONE') === 'true';
+    } catch {
+      return false;
+    }
+  });
 
   const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
   const [dataError, setDataError] = useState<string | null>(null);
@@ -99,11 +107,19 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     const res = await api.checkStructure();
     if (res.success && res.data) {
       setStructureInfo(res.data);
-      if (res.data.is_fully_valid) {
-        setConnectionState('CONNECTED');
-      } else {
-        setConnectionState('CONNECTED'); // Terhubung tapi beberapa tab/header mungkin butuh inisialisasi
+      const isDbReady = Boolean(
+        res.data.is_fully_valid ||
+        res.data.has_admin ||
+        (res.data.sheets_status && (!res.data.missing_sheets || res.data.missing_sheets.length === 0)) ||
+        (res.data.total_users && res.data.total_users > 0)
+      );
+      if (isDbReady) {
+        setIsDatabaseSetupDone(true);
+        try {
+          localStorage.setItem('SIP_TATIB_DB_SETUP_DONE', 'true');
+        } catch {}
       }
+      setConnectionState('CONNECTED');
     } else {
       setConnectionState('ERROR');
       setConnectionError(res.error || 'Gagal terhubung ke Google Spreadsheet.');
@@ -191,6 +207,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const setupFirstAdmin = async (username: string, password: string, nama: string) => {
     const res = await api.setupInitialAdmin(username, password, nama);
     if (res.success && res.data) {
+      setIsDatabaseSetupDone(true);
+      try {
+        localStorage.setItem('SIP_TATIB_DB_SETUP_DONE', 'true');
+      } catch {}
       setCurrentUser(res.data);
       await checkConnection();
       return { success: true };
@@ -201,6 +221,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const initEmptyStructure = async (adminData?: { username: string; password: string; nama: string }) => {
     const res = await api.initStructure(adminData);
     if (res.success) {
+      setIsDatabaseSetupDone(true);
+      try {
+        localStorage.setItem('SIP_TATIB_DB_SETUP_DONE', 'true');
+      } catch {}
       await checkConnection();
       if (currentUser) {
         await refreshData();
@@ -233,7 +257,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       case 'master_pelanggaran':
         return ['ADMIN', 'WAKASEK_KESISWAAN'].includes(role);
       case 'rekap_bulanan':
-        return ['ADMIN', 'WAKASEK_KESISWAAN', 'GURU_BK', 'TIM_KEDISIPLINAN'].includes(role);
+        return ['ADMIN', 'WAKASEK_KESISWAAN', 'GURU_BK', 'TIM_KEDISIPLINAN', 'WALI_KELAS', 'KOORDINATOR_PIKET'].includes(role);
       case 'notifikasi_wa':
         return ['ADMIN', 'WAKASEK_KESISWAAN', 'TIM_KEDISIPLINAN'].includes(role);
       case 'manajemen_user':
@@ -263,6 +287,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
         checkConnection,
         structureInfo,
         initEmptyStructure,
+        isDatabaseSetupDone,
         isLoadingData,
         dataError,
         refreshData,

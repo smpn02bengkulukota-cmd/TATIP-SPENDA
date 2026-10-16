@@ -11,7 +11,7 @@
 // Konfigurasi Header Kolom Wajib untuk 9 Tab Spreadsheet
 var SCHEMAS = {
   Users: [
-    'user_id', 'username', 'password_hash', 'salt', 'nama', 'peran', 
+    'user_id', 'username', 'password_hash', 'salt', 'nama', 'nip', 'peran', 
     'status_aktif', 'tanggal_dibuat', 'terakhir_login'
   ],
   Siswa: [
@@ -486,6 +486,7 @@ function authLogin(username, password) {
         user_id: targetUser.user_id,
         username: targetUser.username,
         nama: targetUser.nama,
+        nip: targetUser.nip || '',
         peran: targetUser.peran,
         status_aktif: targetUser.status_aktif,
         terakhir_login: nowStr
@@ -531,18 +532,23 @@ function setupInitialAdmin(username, password, nama) {
   var passwordHash = hashPassword(password, salt);
   var userId = 'USR-' + Utilities.getUuid().substring(0, 8).toUpperCase();
   var nowStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss');
+  var headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
 
-  var newRow = [
-    userId,
-    username.trim(),
-    passwordHash,
-    salt,
-    nama.trim(),
-    'ADMIN',
-    'AKTIF',
-    nowStr,
-    nowStr
-  ];
+  var newRow = new Array(headers.length);
+  for (var h = 0; h < headers.length; h++) {
+    var col = headers[h];
+    if (col === 'user_id') newRow[h] = userId;
+    else if (col === 'username') newRow[h] = username.trim();
+    else if (col === 'password_hash') newRow[h] = passwordHash;
+    else if (col === 'salt') newRow[h] = salt;
+    else if (col === 'nama') newRow[h] = nama.trim();
+    else if (col === 'nip') newRow[h] = '-';
+    else if (col === 'peran') newRow[h] = 'ADMIN';
+    else if (col === 'status_aktif') newRow[h] = 'AKTIF';
+    else if (col === 'tanggal_dibuat') newRow[h] = nowStr;
+    else if (col === 'terakhir_login') newRow[h] = nowStr;
+    else newRow[h] = '';
+  }
 
   sheet.appendRow(newRow);
 
@@ -620,6 +626,7 @@ function getAllData(userRole, userId) {
         user_id: u.user_id,
         username: u.username,
         nama: u.nama,
+        nip: u.nip || '-',
         peran: u.peran,
         status_aktif: u.status_aktif,
         tanggal_dibuat: u.tanggal_dibuat,
@@ -1409,19 +1416,23 @@ function crudUser(payload) {
     var userId = 'USR-' + Utilities.getUuid().substring(0, 8).toUpperCase();
     var nowStr = Utilities.formatDate(new Date(), Session.getScriptTimeZone() || 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss');
 
-    var newRow = [
-      userId,
-      payload.username.trim(),
-      hash,
-      salt,
-      payload.nama.trim(),
-      payload.peran,
-      'AKTIF',
-      nowStr,
-      ''
-    ];
+    var newRow = new Array(headers.length);
+    for (var h = 0; h < headers.length; h++) {
+      var col = headers[h];
+      if (col === 'user_id') newRow[h] = userId;
+      else if (col === 'username') newRow[h] = payload.username.trim();
+      else if (col === 'password_hash') newRow[h] = hash;
+      else if (col === 'salt') newRow[h] = salt;
+      else if (col === 'nama') newRow[h] = payload.nama.trim();
+      else if (col === 'nip') newRow[h] = payload.nip ? String(payload.nip).trim() : '-';
+      else if (col === 'peran') newRow[h] = payload.peran;
+      else if (col === 'status_aktif') newRow[h] = 'AKTIF';
+      else if (col === 'tanggal_dibuat') newRow[h] = nowStr;
+      else if (col === 'terakhir_login') newRow[h] = '';
+      else newRow[h] = '';
+    }
     sheet.appendRow(newRow);
-    writeAuditLog(payload.actor_id, 'CREATE_USER', 'Users', userId, '', JSON.stringify({ username: payload.username, peran: payload.peran }), 'Tambah pengguna baru');
+    writeAuditLog(payload.actor_id, 'CREATE_USER', 'Users', userId, '', JSON.stringify({ username: payload.username, nip: payload.nip, peran: payload.peran }), 'Tambah pengguna baru');
     return { success: true, message: 'Pengguna baru berhasil didaftarkan.' };
   }
 
@@ -1430,9 +1441,10 @@ function crudUser(payload) {
     for (var i = 0; i < userRecords.length; i++) {
       if (userRecords[i].user_id === payload.user_id) {
         var row = i + 2;
-        if (payload.nama) sheet.getRange(row, headers.indexOf('nama') + 1).setValue(payload.nama);
-        if (payload.peran) sheet.getRange(row, headers.indexOf('peran') + 1).setValue(payload.peran);
-        if (payload.status_aktif) sheet.getRange(row, headers.indexOf('status_aktif') + 1).setValue(payload.status_aktif);
+        if (payload.nama && headers.indexOf('nama') !== -1) sheet.getRange(row, headers.indexOf('nama') + 1).setValue(payload.nama);
+        if (payload.nip !== undefined && headers.indexOf('nip') !== -1) sheet.getRange(row, headers.indexOf('nip') + 1).setValue(payload.nip ? String(payload.nip).trim() : '-');
+        if (payload.peran && headers.indexOf('peran') !== -1) sheet.getRange(row, headers.indexOf('peran') + 1).setValue(payload.peran);
+        if (payload.status_aktif && headers.indexOf('status_aktif') !== -1) sheet.getRange(row, headers.indexOf('status_aktif') + 1).setValue(payload.status_aktif);
 
         // Jika reset password diminta
         if (payload.new_password) {

@@ -43,7 +43,7 @@ export const PanduanSetupView: React.FC<PanduanSetupViewProps> = ({ onClose }) =
  */
 
 var SCHEMAS = {
-  Users: ['user_id', 'username', 'password_hash', 'salt', 'nama', 'peran', 'status_aktif', 'tanggal_dibuat', 'terakhir_login'],
+  Users: ['user_id', 'username', 'password_hash', 'salt', 'nama', 'nip', 'peran', 'status_aktif', 'tanggal_dibuat', 'terakhir_login'],
   Siswa: ['siswa_id', 'nisn', 'nama_lengkap', 'kelas_id', 'tahun_ajaran', 'status_aktif'],
   Kelas: ['kelas_id', 'nama_kelas', 'tahun_ajaran', 'wali_kelas_user_id', 'nomor_wa_wali_kelas', 'status_aktif'],
   MasterPelanggaran: ['kode_pelanggaran', 'uraian', 'bobot_poin', 'kategori', 'status_aktif', 'catatan_aturan', 'tanggal_mulai_berlaku'],
@@ -363,7 +363,7 @@ function getAllData(userRole, userId) {
   }
   if (result.Users) {
     result.Users = result.Users.map(function(u) {
-      return { user_id: u.user_id, username: u.username, nama: u.nama, peran: u.peran, status_aktif: u.status_aktif, tanggal_dibuat: u.tanggal_dibuat, terakhir_login: u.terakhir_login };
+      return { user_id: u.user_id, username: u.username, nama: u.nama, nip: u.nip || '-', peran: u.peran, status_aktif: u.status_aktif, tanggal_dibuat: u.tanggal_dibuat, terakhir_login: u.terakhir_login };
     });
   }
   if (userRole === 'WALI_KELAS' && userId && result.Kelas) {
@@ -673,7 +673,22 @@ function crudUser(p) {
     var hash = hashPassword(p.password, salt);
     var uid = 'USR-' + Utilities.getUuid().substring(0, 8).toUpperCase();
     var nowStr = Utilities.formatDate(new Date(), 'Asia/Jakarta', 'yyyy-MM-dd HH:mm:ss');
-    sheet.appendRow([uid, p.username.trim(), hash, salt, p.nama.trim(), p.peran, 'AKTIF', nowStr, '']);
+    var rowData = new Array(h.length);
+    for (var colI = 0; colI < h.length; colI++) {
+      var colName = h[colI];
+      if (colName === 'user_id') rowData[colI] = uid;
+      else if (colName === 'username') rowData[colI] = p.username.trim();
+      else if (colName === 'password_hash') rowData[colI] = hash;
+      else if (colName === 'salt') rowData[colI] = salt;
+      else if (colName === 'nama') rowData[colI] = p.nama.trim();
+      else if (colName === 'nip') rowData[colI] = p.nip ? String(p.nip).trim() : '-';
+      else if (colName === 'peran') rowData[colI] = p.peran;
+      else if (colName === 'status_aktif') rowData[colI] = 'AKTIF';
+      else if (colName === 'tanggal_dibuat') rowData[colI] = nowStr;
+      else if (colName === 'terakhir_login') rowData[colI] = '';
+      else rowData[colI] = '';
+    }
+    sheet.appendRow(rowData);
     writeAuditLog(p.actor_id, 'CREATE_USER', 'Users', uid, '', '', 'Tambah user');
     return { success: true, message: 'Pengguna baru didaftarkan.' };
   }
@@ -682,9 +697,10 @@ function crudUser(p) {
     for (var i = 0; i < recs.length; i++) {
       if (recs[i].user_id === p.user_id) {
         var row = i + 2;
-        if (p.nama) sheet.getRange(row, h.indexOf('nama') + 1).setValue(p.nama);
-        if (p.peran) sheet.getRange(row, h.indexOf('peran') + 1).setValue(p.peran);
-        if (p.status_aktif) sheet.getRange(row, h.indexOf('status_aktif') + 1).setValue(p.status_aktif);
+        if (p.nama && h.indexOf('nama') !== -1) sheet.getRange(row, h.indexOf('nama') + 1).setValue(p.nama);
+        if (p.nip !== undefined && h.indexOf('nip') !== -1) sheet.getRange(row, h.indexOf('nip') + 1).setValue(p.nip ? String(p.nip).trim() : '-');
+        if (p.peran && h.indexOf('peran') !== -1) sheet.getRange(row, h.indexOf('peran') + 1).setValue(p.peran);
+        if (p.status_aktif && h.indexOf('status_aktif') !== -1) sheet.getRange(row, h.indexOf('status_aktif') + 1).setValue(p.status_aktif);
         if (p.new_password) {
           var ns = generateSalt();
           sheet.getRange(row, h.indexOf('password_hash') + 1).setValue(hashPassword(p.new_password, ns));
@@ -992,7 +1008,7 @@ function writeAuditLog(uid, aksi, tbl, rec, bef, aft, als) {
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">
             <span className="font-bold text-blue-950 block">1. Tab: Users</span>
             <code className="text-[11px] font-mono text-slate-700 block mt-1">
-              user_id, username, password_hash, salt, nama, peran, status_aktif, tanggal_dibuat, terakhir_login
+              user_id, username, password_hash, salt, nama, nip, peran, status_aktif, tanggal_dibuat, terakhir_login
             </code>
           </div>
           <div className="p-3 bg-slate-50 rounded-lg border border-slate-200">

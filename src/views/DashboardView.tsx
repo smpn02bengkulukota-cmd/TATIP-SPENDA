@@ -10,6 +10,7 @@ import {
   Inbox
 } from 'lucide-react';
 import { getEffectivePoin } from '../utils/pointCalculator';
+import { WeeklyViolationChart } from '../components/WeeklyViolationChart';
 
 export const DashboardView: React.FC = () => {
   const { 
@@ -218,6 +219,12 @@ export const DashboardView: React.FC = () => {
           <p className="mt-1 text-[11px] text-slate-400">Perlu tindak lanjut / kirim ulang</p>
         </div>
       </div>
+
+      {/* Visualisasi Tren Pelanggaran Mingguan (Recharts) */}
+      <WeeklyViolationChart 
+        laporan={validLaporan} 
+        skemaPoin={pengaturan['SKEMA_POIN_PELANGGARAN']} 
+      />
 
       {/* Grid Dua Kolom: Rekap per Kelas & Daftar Siswa Poin Tertinggi */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

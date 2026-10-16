@@ -379,16 +379,16 @@ export const ReportPrintModal: React.FC<ReportPrintModalProps> = ({
               <div className="text-center">
                 <div>{kop.kotaPengesahan || 'Kota Bengkulu'}, {todayStr}</div>
                 <div className="font-bold">
-                  {kop.jabatanPenanggungJawab2 || 'Wakil Kepala Sekolah Bid. Kesiswaan'}
+                  {reportOptions.waliKelasName ? `Wali ${kelasLabel}` : (kop.jabatanPenanggungJawab2 || 'Wakil Kepala Sekolah Bid. Kesiswaan')}
                 </div>
                 <div className="h-20 flex items-center justify-center text-slate-300 text-[10px] italic">
                   (Tanda tangan)
                 </div>
                 <div className="font-bold underline text-sm">
-                  {kop.namaPenanggungJawab2 || 'Nama Penanggung Jawab'}
+                  {reportOptions.waliKelasName || kop.namaPenanggungJawab2 || 'Nama Penanggung Jawab'}
                 </div>
                 <div className="text-slate-700 font-mono text-[11px] mt-0.5">
-                  NIP. {kop.nipPenanggungJawab2 || '-'}
+                  NIP. {reportOptions.waliKelasNip || kop.nipPenanggungJawab2 || '-'}
                 </div>
               </div>
             </div>

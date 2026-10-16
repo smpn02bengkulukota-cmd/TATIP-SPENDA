@@ -63,6 +63,8 @@ export interface ReportExportOptions {
   rekapKelas: RekapKelasItem[];
   rincianLaporan: RincianPelanggaranItem[];
   rumusIndikator?: string;
+  waliKelasName?: string;
+  waliKelasNip?: string;
 }
 
 /**
