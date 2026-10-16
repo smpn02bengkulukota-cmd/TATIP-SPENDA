@@ -13,22 +13,62 @@ import {
   UserRole
 } from '../types';
 
-// Ambil URL Apps Script dari konfigurasi deployment environment
-const ENV_APPS_SCRIPT_URL = import.meta.env.VITE_APPS_SCRIPT_URL || '';
+// URL Google Apps Script Web App tersinkronisasi resmi (SMP Negeri 2 Kota Bengkulu)
+// Database: Spreadsheet "Aplikasi Pelanggaran Siswa 2 " (ID: 1whG_ljzxh45oG3V8ILHqOivrfa3A29VPU3MJsEMr90Y)
+export const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx8-p75_yS7kQJyWjQY1eqle2OKvDXUFTF7BUz3GYpZLRP_zQEyfjvXkVuyUEpmvNeh/exec';
 
-// Simpan endpoint aktif (dapat diisi via deployment environment atau konfigurasi deployment)
-let activeEndpointUrl: string = ENV_APPS_SCRIPT_URL;
+// Prioritaskan Environment Variable VITE_APPS_SCRIPT_URL, fallback ke storage browser, lalu ke DEFAULT_APPS_SCRIPT_URL
+const getInitialEndpoint = (): string => {
+  // 1. Cek Environment Variable VITE_APPS_SCRIPT_URL (dari .env atau build environment Vercel)
+  const envUrl = import.meta.env.VITE_APPS_SCRIPT_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.trim().startsWith('http')) {
+    return envUrl.trim();
+  }
+
+  // 2. Cek localStorage browser
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      const stored = localStorage.getItem('SIP_TATIB_ENDPOINT');
+      if (stored && stored.trim().startsWith('http')) {
+        return stored.trim();
+      }
+    }
+  } catch {}
+
+  // 3. Cek sessionStorage browser
+  try {
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      const storedSession = sessionStorage.getItem('SIP_TATIB_ENDPOINT');
+      if (storedSession && storedSession.trim().startsWith('http')) {
+        return storedSession.trim();
+      }
+    }
+  } catch {}
+
+  // 4. Default: URL Google Apps Script yang telah tersinkronisasi di AI Studio
+  return DEFAULT_APPS_SCRIPT_URL;
+};
+
+// Simpan endpoint aktif
+let activeEndpointUrl: string = getInitialEndpoint();
 
 export const getEndpointUrl = (): string => {
-  return activeEndpointUrl;
+  return activeEndpointUrl || DEFAULT_APPS_SCRIPT_URL;
 };
 
 export const setEndpointUrl = (url: string): void => {
-  activeEndpointUrl = url.trim();
+  activeEndpointUrl = url.trim() || DEFAULT_APPS_SCRIPT_URL;
+  try {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('SIP_TATIB_ENDPOINT', activeEndpointUrl);
+      sessionStorage.setItem('SIP_TATIB_ENDPOINT', activeEndpointUrl);
+    }
+  } catch {}
 };
 
 export const isEndpointConfigured = (): boolean => {
-  return Boolean(activeEndpointUrl && activeEndpointUrl.startsWith('http'));
+  const url = getEndpointUrl();
+  return Boolean(url && url.startsWith('http'));
 };
 
 /**

@@ -11,6 +11,8 @@ import {
   TableProperties
 } from 'lucide-react';
 
+import { DEFAULT_APPS_SCRIPT_URL } from '../services/api';
+
 interface PanduanSetupViewProps {
   onClose?: () => void;
 }
@@ -26,7 +28,7 @@ export const PanduanSetupView: React.FC<PanduanSetupViewProps> = ({ onClose }) =
     initEmptyStructure
   } = useApp();
 
-  const [inputUrl, setInputUrl] = useState(endpointUrl);
+  const [inputUrl, setInputUrl] = useState(endpointUrl || DEFAULT_APPS_SCRIPT_URL);
   const [isCopied, setIsCopied] = useState(false);
   const [isTesting, setIsTesting] = useState(false);
   const [isInitializing, setIsInitializing] = useState(false);
@@ -853,9 +855,20 @@ function writeAuditLog(uid, aksi, tbl, rec, bef, aft, als) {
                 {isTesting ? 'Menguji Koneksi...' : 'Uji & Simpan Endpoint'}
               </button>
             </div>
-            <p className="text-[11px] text-slate-500 mt-1">
-              Untuk deployment permanen, simpan nilai ini pada variabel environment <code className="font-mono bg-slate-100 px-1 py-0.5 rounded">VITE_APPS_SCRIPT_URL</code> di file <code className="font-mono bg-slate-100 px-1 py-0.5 rounded">.env</code>.
-            </p>
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-[11px] text-slate-500">
+                Deployment Vercel / GitHub telah otomatis terhubung ke spreadsheet resmi SMPN 2 Kota Bengkulu.
+              </p>
+              {inputUrl !== DEFAULT_APPS_SCRIPT_URL && (
+                <button
+                  type="button"
+                  onClick={() => setInputUrl(DEFAULT_APPS_SCRIPT_URL)}
+                  className="text-[11px] px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-900 border border-blue-200 rounded font-medium transition-colors"
+                >
+                  Gunakan Endpoint Sinkronisasi AI Studio
+                </button>
+              )}
+            </div>
           </div>
         </form>
 

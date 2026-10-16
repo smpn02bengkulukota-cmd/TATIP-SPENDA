@@ -85,9 +85,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   const updateEndpointUrl = (url: string) => {
     setEndpointUrl(url);
-    setEndpointState(url);
-    // Simpan ke sessionStorage sesi peramban semata untuk pengujian deploy
+    setEndpointState(getEndpointUrl());
     try {
+      localStorage.setItem('SIP_TATIB_ENDPOINT', url);
       sessionStorage.setItem('SIP_TATIB_ENDPOINT', url);
     } catch {}
   };
@@ -161,12 +161,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Cek koneksi awal saat mount
   useEffect(() => {
     try {
-      const savedEndpoint = sessionStorage.getItem('SIP_TATIB_ENDPOINT');
-      if (savedEndpoint && !getEndpointUrl()) {
-        setEndpointUrl(savedEndpoint);
-        setEndpointState(savedEndpoint);
+      const savedEndpoint = localStorage.getItem('SIP_TATIB_ENDPOINT') || sessionStorage.getItem('SIP_TATIB_ENDPOINT');
+      if (savedEndpoint && savedEndpoint.trim().startsWith('http')) {
+        setEndpointUrl(savedEndpoint.trim());
+        setEndpointState(getEndpointUrl());
+      } else {
+        // Gunakan default endpoint yang sudah tersinkronisasi di AI Studio
+        setEndpointState(getEndpointUrl());
       }
-    } catch {}
+    } catch {
+      setEndpointState(getEndpointUrl());
+    }
 
     checkConnection();
   }, [checkConnection]);

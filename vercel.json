@@ -1,0 +1,12 @@
+{
+  "framework": "vite",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_APPS_SCRIPT_URL": "https://script.google.com/macros/s/AKfycbx8-p75_yS7kQJyWjQY1eqle2OKvDXUFTF7BUz3GYpZLRP_zQEyfjvXkVuyUEpmvNeh/exec"
+  }
+}
