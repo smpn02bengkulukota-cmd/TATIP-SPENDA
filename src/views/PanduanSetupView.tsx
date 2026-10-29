@@ -646,20 +646,51 @@ function crudMasterPelanggaran(p) {
   if (p.sub_action === 'create') {
     var code = String(p.kode_pelanggaran).trim().toUpperCase();
     var bobot = Number(p.bobot_poin) || 0;
+    var recs = readTableAsObjects(sheet);
+    for (var k = 0; k < recs.length; k++) {
+      if (String(recs[k].kode_pelanggaran).trim().toUpperCase() === code) {
+        return { success: false, error: 'Gagal menyimpan: Kode pelanggaran "' + code + '" sudah digunakan oleh aturan lain. Silakan gunakan kode unik.' };
+      }
+    }
     sheet.appendRow([code, String(p.uraian).trim(), bobot, String(p.kategori).trim(), 'AKTIF', String(p.catatan_aturan || '').trim(), String(p.tanggal_mulai_berlaku || '2026-07-01')]);
     writeAuditLog(p.user_id, 'CREATE_MASTER', 'MasterPelanggaran', code, '', '', 'Tambah kode');
     return { success: true, message: 'Master pelanggaran disimpan.' };
   }
   if (p.sub_action === 'update') {
+    var oldCode = String(p.kode_pelanggaran_lama || p.kode_pelanggaran).trim().toUpperCase();
+    var newCode = String(p.kode_pelanggaran || oldCode).trim().toUpperCase();
     var recs = readTableAsObjects(sheet);
+
+    if (newCode !== oldCode) {
+      for (var k = 0; k < recs.length; k++) {
+        if (String(recs[k].kode_pelanggaran).trim().toUpperCase() === newCode) {
+          return { success: false, error: 'Gagal menyimpan: Kode pelanggaran "' + newCode + '" sudah digunakan oleh aturan lain. Silakan gunakan kode unik.' };
+        }
+      }
+    }
+
     for (var i = 0; i < recs.length; i++) {
-      if (recs[i].kode_pelanggaran === p.kode_pelanggaran) {
+      if (String(recs[i].kode_pelanggaran).trim().toUpperCase() === oldCode) {
         var row = i + 2;
+        if (newCode !== oldCode) {
+          sheet.getRange(row, h.indexOf('kode_pelanggaran') + 1).setValue(newCode);
+          var lapSheet = getSpreadsheet().getSheetByName('LaporanPelanggaran');
+          if (lapSheet && lapSheet.getLastRow() > 1) {
+            var lh = lapSheet.getRange(1, 1, 1, lapSheet.getLastColumn()).getValues()[0];
+            var lc = lh.indexOf('kode_pelanggaran') + 1;
+            if (lc > 0) {
+              var lvals = lapSheet.getRange(2, lc, lapSheet.getLastRow() - 1, 1).getValues();
+              for (var r = 0; r < lvals.length; r++) {
+                if (String(lvals[r][0]).trim().toUpperCase() === oldCode) lapSheet.getRange(r + 2, lc).setValue(newCode);
+              }
+            }
+          }
+        }
         if (p.uraian) sheet.getRange(row, h.indexOf('uraian') + 1).setValue(p.uraian);
         if (p.bobot_poin !== undefined) sheet.getRange(row, h.indexOf('bobot_poin') + 1).setValue(Number(p.bobot_poin));
         if (p.kategori) sheet.getRange(row, h.indexOf('kategori') + 1).setValue(p.kategori);
         if (p.status_aktif) sheet.getRange(row, h.indexOf('status_aktif') + 1).setValue(p.status_aktif);
-        writeAuditLog(p.user_id, 'UPDATE_MASTER', 'MasterPelanggaran', p.kode_pelanggaran, '', '', 'Update master');
+        writeAuditLog(p.user_id, 'UPDATE_MASTER', 'MasterPelanggaran', newCode, '', '', 'Update master');
         return { success: true, message: 'Master pelanggaran diperbarui.' };
       }
     }

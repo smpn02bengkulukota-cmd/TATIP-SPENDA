@@ -55,12 +55,12 @@ export const RiwayatPoinView: React.FC = () => {
 
       // Search Query
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const nama = s ? s.nama_lengkap.toLowerCase() : '';
-        const nisn = s ? s.nisn.toLowerCase() : '';
-        const kode = lap.kode_pelanggaran.toLowerCase();
+        const q = searchQuery.toLowerCase().trim();
+        const nama = s ? String(s.nama_lengkap || '').toLowerCase() : '';
+        const nisn = s ? String(s.nisn || '').toLowerCase() : '';
+        const kode = String(lap.kode_pelanggaran || '').toLowerCase();
         const m = masterPelanggaran.find(x => x.kode_pelanggaran === lap.kode_pelanggaran);
-        const uraian = m ? m.uraian.toLowerCase() : '';
+        const uraian = m ? String(m.uraian || '').toLowerCase() : '';
 
         if (!nama.includes(q) && !nisn.includes(q) && !kode.includes(q) && !uraian.includes(q)) {
           return false;

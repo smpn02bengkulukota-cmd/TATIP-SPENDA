@@ -89,10 +89,10 @@ export const PembinaanWaliKelasView: React.FC = () => {
 
       // Search query
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        const nama = item.siswa ? item.siswa.nama_lengkap.toLowerCase() : '';
-        const nisn = item.siswa ? item.siswa.nisn.toLowerCase() : '';
-        const pelanggaran = item.master ? item.master.uraian.toLowerCase() : '';
+        const q = searchQuery.toLowerCase().trim();
+        const nama = item.siswa ? String(item.siswa.nama_lengkap || '').toLowerCase() : '';
+        const nisn = item.siswa ? String(item.siswa.nisn || '').toLowerCase() : '';
+        const pelanggaran = item.master ? String(item.master.uraian || '').toLowerCase() : '';
         if (!nama.includes(q) && !nisn.includes(q) && !pelanggaran.includes(q)) {
           return false;
         }

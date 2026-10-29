@@ -51,7 +51,10 @@ export const InputPelanggaranView: React.FC = () => {
     if (!searchSiswaQuery.trim()) return [];
     const q = searchSiswaQuery.toLowerCase().trim();
     return siswa
-      .filter(s => s.status_aktif === 'AKTIF' && (s.nama_lengkap.toLowerCase().includes(q) || s.nisn.toLowerCase().includes(q)))
+      .filter(s => s.status_aktif === 'AKTIF' && (
+        String(s.nama_lengkap || '').toLowerCase().includes(q) || 
+        String(s.nisn || '').toLowerCase().includes(q)
+      ))
       .slice(0, 8);
   }, [siswa, searchSiswaQuery]);
 

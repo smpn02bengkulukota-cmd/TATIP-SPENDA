@@ -95,11 +95,50 @@ export const MasterPelanggaranView: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser || !formKode.trim() || !formUraian.trim()) return;
+    if (!currentUser) return;
+
+    const trimmedKode = formKode.trim().toUpperCase();
+    const trimmedUraian = formUraian.trim();
+
+    if (!trimmedKode) {
+      setFeedback({ success: false, text: 'Kode pelanggaran wajib diisi.' });
+      return;
+    }
+
+    if (!trimmedUraian) {
+      setFeedback({ success: false, text: 'Uraian pelanggaran wajib diisi.' });
+      return;
+    }
 
     if (formBobot < 1 || formBobot > 100) {
       setFeedback({ success: false, text: 'Bobot poin harus bernilai antara 1 sampai 100.' });
       return;
+    }
+
+    // Validasi kode duplikat
+    if (modalMode === 'create') {
+      const isDuplicate = masterPelanggaran.some(
+        m => m.kode_pelanggaran.toUpperCase() === trimmedKode
+      );
+      if (isDuplicate) {
+        setFeedback({ 
+          success: false, 
+          text: `Gagal menyimpan: Kode pelanggaran "${trimmedKode}" sudah digunakan oleh master pelanggaran lain. Silakan gunakan kode unik.` 
+        });
+        return;
+      }
+    } else if (modalMode === 'edit' && activeItem) {
+      const isDuplicate = masterPelanggaran.some(
+        m => m.kode_pelanggaran.toUpperCase() === trimmedKode && 
+             m.kode_pelanggaran.toUpperCase() !== activeItem.kode_pelanggaran.toUpperCase()
+      );
+      if (isDuplicate) {
+        setFeedback({ 
+          success: false, 
+          text: `Gagal menyimpan: Kode pelanggaran "${trimmedKode}" sudah digunakan oleh master pelanggaran lain. Silakan gunakan kode unik.` 
+        });
+        return;
+      }
     }
 
     setIsSubmitting(true);
@@ -109,8 +148,8 @@ export const MasterPelanggaranView: React.FC = () => {
     if (modalMode === 'create') {
       res = await api.crudMasterPelanggaran({
         sub_action: 'create',
-        kode_pelanggaran: formKode.trim().toUpperCase(),
-        uraian: formUraian.trim(),
+        kode_pelanggaran: trimmedKode,
+        uraian: trimmedUraian,
         bobot_poin: formBobot,
         kategori: formKategori.trim(),
         catatan_aturan: formCatatan.trim(),
@@ -120,8 +159,9 @@ export const MasterPelanggaranView: React.FC = () => {
     } else if (modalMode === 'edit' && activeItem) {
       res = await api.crudMasterPelanggaran({
         sub_action: 'update',
-        kode_pelanggaran: activeItem.kode_pelanggaran,
-        uraian: formUraian.trim(),
+        kode_pelanggaran: trimmedKode,
+        kode_pelanggaran_lama: activeItem.kode_pelanggaran,
+        uraian: trimmedUraian,
         bobot_poin: formBobot,
         kategori: formKategori.trim(),
         status_aktif: formStatusAktif,
@@ -316,16 +356,29 @@ export const MasterPelanggaranView: React.FC = () => {
             <form onSubmit={handleSubmit} className="space-y-3">
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Kode Pelanggaran</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Kode Pelanggaran
+                    {modalMode === 'edit' && (
+                      <span className="text-blue-700 font-normal ml-1">(Dapat diedit)</span>
+                    )}
+                  </label>
                   <input
                     type="text"
                     required
-                    disabled={modalMode === 'edit'}
                     value={formKode}
-                    onChange={(e) => setFormKode(e.target.value.toUpperCase())}
+                    onChange={(e) => {
+                      setFormKode(e.target.value.toUpperCase());
+                      if (feedback) setFeedback(null);
+                    }}
                     placeholder="Contoh: TATIB-01"
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono disabled:bg-slate-100 uppercase"
+                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-xs text-slate-900 font-mono uppercase focus:ring-2 focus:ring-blue-600"
                   />
+                  {modalMode === 'edit' && activeItem && formKode.trim().toUpperCase() !== activeItem.kode_pelanggaran.toUpperCase() && (
+                    <p className="text-[10px] text-amber-700 mt-1 flex items-center gap-1 font-medium">
+                      <AlertCircle className="w-3 h-3 shrink-0" />
+                      Kode akan diubah dari <span className="font-mono">{activeItem.kode_pelanggaran}</span> ke <span className="font-mono">{formKode.trim().toUpperCase()}</span>
+                    </p>
+                  )}
                 </div>
 
                 <div>

@@ -135,11 +135,35 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
     const res = await api.getAllData(currentUser.peran, currentUser.user_id);
     if (res.success && res.data) {
-      setUsers(res.data.Users || []);
-      setSiswa(res.data.Siswa || []);
+      const sanitizedUsers = (res.data.Users || []).map((u: any) => ({
+        ...u,
+        nip: String(u.nip ?? '').trim(),
+        nama: String(u.nama ?? '').trim(),
+      }));
+      setUsers(sanitizedUsers);
+
+      const sanitizedSiswa = (res.data.Siswa || []).map((s: any) => ({
+        ...s,
+        nisn: String(s.nisn ?? '').trim(),
+        nama_lengkap: String(s.nama_lengkap ?? '').trim(),
+      }));
+      setSiswa(sanitizedSiswa);
+
       setKelas(res.data.Kelas || []);
-      setMasterPelanggaran(res.data.MasterPelanggaran || []);
-      setLaporan(res.data.LaporanPelanggaran || []);
+
+      const sanitizedMaster = (res.data.MasterPelanggaran || []).map((m: any) => ({
+        ...m,
+        kode_pelanggaran: String(m.kode_pelanggaran ?? '').trim(),
+        uraian: String(m.uraian ?? '').trim(),
+      }));
+      setMasterPelanggaran(sanitizedMaster);
+
+      const sanitizedLaporan = (res.data.LaporanPelanggaran || []).map((l: any) => ({
+        ...l,
+        kode_pelanggaran: String(l.kode_pelanggaran ?? '').trim(),
+      }));
+      setLaporan(sanitizedLaporan);
+
       setTindakLanjut(res.data.TindakLanjut || []);
       setNotifikasi(res.data.NotifikasiWA || []);
       setAuditLog(res.data.AuditLog || []);

@@ -51,8 +51,10 @@ export const DataSiswaView: React.FC = () => {
       if (filterStatus !== 'ALL' && s.status_aktif !== filterStatus) return false;
 
       if (searchQuery.trim()) {
-        const q = searchQuery.toLowerCase();
-        if (!s.nama_lengkap.toLowerCase().includes(q) && !s.nisn.toLowerCase().includes(q)) {
+        const q = searchQuery.toLowerCase().trim();
+        const nama = String(s.nama_lengkap || '').toLowerCase();
+        const nisn = String(s.nisn || '').toLowerCase();
+        if (!nama.includes(q) && !nisn.includes(q)) {
           return false;
         }
       }

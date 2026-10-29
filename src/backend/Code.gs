@@ -1353,6 +1353,13 @@ function crudMasterPelanggaran(payload) {
       return { success: false, error: 'Bobot poin harus antara 1 sampai 100.' };
     }
 
+    var records = readTableAsObjects(sheet);
+    for (var k = 0; k < records.length; k++) {
+      if (String(records[k].kode_pelanggaran).trim().toUpperCase() === kode) {
+        return { success: false, error: 'Gagal menyimpan: Kode pelanggaran "' + kode + '" sudah ada di sistem. Silakan gunakan kode unik.' };
+      }
+    }
+
     var newRow = [
       kode,
       String(payload.uraian).trim(),
@@ -1368,21 +1375,61 @@ function crudMasterPelanggaran(payload) {
   }
 
   if (subAction === 'update') {
+    var oldKode = String(payload.kode_pelanggaran_lama || payload.kode_pelanggaran).trim().toUpperCase();
+    var newKode = String(payload.kode_pelanggaran || oldKode).trim().toUpperCase();
     var records = readTableAsObjects(sheet);
-    for (var i = 0; i < records.length; i++) {
-      if (records[i].kode_pelanggaran === payload.kode_pelanggaran) {
-        var row = i + 2;
-        if (payload.uraian) sheet.getRange(row, headers.indexOf('uraian') + 1).setValue(payload.uraian);
-        if (payload.bobot_poin !== undefined) sheet.getRange(row, headers.indexOf('bobot_poin') + 1).setValue(Number(payload.bobot_poin));
-        if (payload.kategori) sheet.getRange(row, headers.indexOf('kategori') + 1).setValue(payload.kategori);
-        if (payload.status_aktif) sheet.getRange(row, headers.indexOf('status_aktif') + 1).setValue(payload.status_aktif);
-        if (payload.catatan_aturan !== undefined) sheet.getRange(row, headers.indexOf('catatan_aturan') + 1).setValue(payload.catatan_aturan);
 
-        writeAuditLog(payload.user_id, 'UPDATE_MASTER_PELANGGARAN', 'MasterPelanggaran', payload.kode_pelanggaran, JSON.stringify(records[i]), JSON.stringify(payload), 'Perbarui master');
-        return { success: true, message: 'Master pelanggaran berhasil diperbarui.' };
+    // Cek jika kode diubah ke kode lain yang sudah ada
+    if (newKode !== oldKode) {
+      for (var k = 0; k < records.length; k++) {
+        if (String(records[k].kode_pelanggaran).trim().toUpperCase() === newKode) {
+          return { success: false, error: 'Gagal menyimpan: Kode pelanggaran "' + newKode + '" sudah digunakan oleh aturan lain. Silakan gunakan kode unik.' };
+        }
       }
     }
-    return { success: false, error: 'Kode pelanggaran tidak ditemukan.' };
+
+    var foundIdx = -1;
+    for (var i = 0; i < records.length; i++) {
+      if (String(records[i].kode_pelanggaran).trim().toUpperCase() === oldKode) {
+        foundIdx = i;
+        break;
+      }
+    }
+
+    if (foundIdx === -1) {
+      return { success: false, error: 'Kode pelanggaran lama "' + oldKode + '" tidak ditemukan.' };
+    }
+
+    var row = foundIdx + 2;
+
+    // Jika kode diubah, update nilai kolom kode_pelanggaran dan sinkronkan ke tab LaporanPelanggaran
+    if (newKode !== oldKode) {
+      sheet.getRange(row, headers.indexOf('kode_pelanggaran') + 1).setValue(newKode);
+
+      var lapSheet = ss.getSheetByName('LaporanPelanggaran');
+      if (lapSheet && lapSheet.getLastRow() > 1) {
+        var lapHeaders = lapSheet.getRange(1, 1, 1, lapSheet.getLastColumn()).getValues()[0];
+        var lapKodeCol = lapHeaders.indexOf('kode_pelanggaran') + 1;
+        if (lapKodeCol > 0) {
+          var lapValues = lapSheet.getRange(2, lapKodeCol, lapSheet.getLastRow() - 1, 1).getValues();
+          for (var r = 0; r < lapValues.length; r++) {
+            if (String(lapValues[r][0]).trim().toUpperCase() === oldKode) {
+              lapSheet.getRange(r + 2, lapKodeCol).setValue(newKode);
+            }
+          }
+        }
+      }
+    }
+
+    if (payload.uraian) sheet.getRange(row, headers.indexOf('uraian') + 1).setValue(payload.uraian);
+    if (payload.bobot_poin !== undefined) sheet.getRange(row, headers.indexOf('bobot_poin') + 1).setValue(Number(payload.bobot_poin));
+    if (payload.kategori) sheet.getRange(row, headers.indexOf('kategori') + 1).setValue(payload.kategori);
+    if (payload.status_aktif) sheet.getRange(row, headers.indexOf('status_aktif') + 1).setValue(payload.status_aktif);
+    if (payload.catatan_aturan !== undefined) sheet.getRange(row, headers.indexOf('catatan_aturan') + 1).setValue(payload.catatan_aturan);
+    if (payload.tanggal_mulai_berlaku) sheet.getRange(row, headers.indexOf('tanggal_mulai_berlaku') + 1).setValue(payload.tanggal_mulai_berlaku);
+
+    writeAuditLog(payload.user_id, 'UPDATE_MASTER_PELANGGARAN', 'MasterPelanggaran', newKode, JSON.stringify(records[foundIdx]), JSON.stringify(payload), 'Perbarui master pelanggaran' + (newKode !== oldKode ? ' (Ganti kode dari ' + oldKode + ' ke ' + newKode + ')' : ''));
+    return { success: true, message: 'Master pelanggaran berhasil diperbarui.' };
   }
 
   return { success: false, error: 'Sub aksi master pelanggaran tidak valid.' };

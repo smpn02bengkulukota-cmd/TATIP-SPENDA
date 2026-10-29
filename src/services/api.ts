@@ -306,6 +306,7 @@ export const api = {
   async crudMasterPelanggaran(payload: {
     sub_action: 'create' | 'update';
     kode_pelanggaran?: string;
+    kode_pelanggaran_lama?: string;
     uraian?: string;
     bobot_poin?: number;
     kategori?: string;

@@ -224,10 +224,10 @@ export const RekapBulananView: React.FC = () => {
       // Filter query pencarian
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
-        const matchNama = item.nama_siswa.toLowerCase().includes(q);
-        const matchNisn = item.nisn.toLowerCase().includes(q);
-        const matchUraian = item.uraian_pelanggaran.toLowerCase().includes(q);
-        const matchKode = item.kode_pelanggaran.toLowerCase().includes(q);
+        const matchNama = String(item.nama_siswa || '').toLowerCase().includes(q);
+        const matchNisn = String(item.nisn || '').toLowerCase().includes(q);
+        const matchUraian = String(item.uraian_pelanggaran || '').toLowerCase().includes(q);
+        const matchKode = String(item.kode_pelanggaran || '').toLowerCase().includes(q);
         if (!matchNama && !matchNisn && !matchUraian && !matchKode) return false;
       }
 
